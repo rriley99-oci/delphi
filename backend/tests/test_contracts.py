@@ -181,7 +181,9 @@ def test_register_contract_api_validates_rule_config(client, dataset):
 
 
 def test_contract_model_declares_version_constraints():
-    contract_constraints = {constraint.name for constraint in Contract.__table__.constraints}
+    contract_constraints = {
+        constraint.name for constraint in Contract.__table__.constraints
+    }
     version_constraints = {
         constraint.name for constraint in ContractVersion.__table__.constraints
     }

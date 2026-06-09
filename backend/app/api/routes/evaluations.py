@@ -8,7 +8,11 @@ from app.schemas.evaluations import EvaluationRunRead, EvaluationTriggerRequest
 from app.services.evaluations import (
     EvaluationNotFoundError,
     EvaluationTriggerError,
+)
+from app.services.evaluations import (
     get_evaluation as get_evaluation_run,
+)
+from app.services.evaluations import (
     trigger_evaluation as trigger_evaluation_run,
 )
 
@@ -23,7 +27,9 @@ async def trigger_evaluation(
     try:
         return trigger_evaluation_run(db, request.dataset_id)
     except EvaluationTriggerError as exc:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
+        ) from exc
 
 
 @router.get("/{evaluation_id}", response_model=EvaluationRunRead)
@@ -34,4 +40,6 @@ async def get_evaluation(
     try:
         return get_evaluation_run(db, evaluation_id)
     except EvaluationNotFoundError as exc:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
+        ) from exc

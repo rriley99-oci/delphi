@@ -11,7 +11,11 @@ from app.db.models import (
     ContractVersionModel,
     DatasetModel,
 )
-from app.services.evaluations import EvaluationTriggerError, get_evaluation, trigger_evaluation
+from app.services.evaluations import (
+    EvaluationTriggerError,
+    get_evaluation,
+    trigger_evaluation,
+)
 
 
 @pytest.fixture()
@@ -35,7 +39,9 @@ def seed_contract(db: Session) -> DatasetModel:
     db.add(dataset)
     db.flush()
 
-    contract = ContractModel(dataset_id=dataset.id, name="Orders contract", status="active")
+    contract = ContractModel(
+        dataset_id=dataset.id, name="Orders contract", status="active"
+    )
     db.add(contract)
     db.flush()
 
@@ -80,8 +86,13 @@ def test_trigger_evaluation_persists_run_and_rule_results(db: Session):
     assert evaluation.passed_rules == 2
     assert evaluation.failed_rules == 0
     assert len(evaluation.results) == 2
-    assert {result.rule_type for result in evaluation.results} == {"freshness", "row_count"}
-    assert all(result.evidence["executor"] == "placeholder" for result in evaluation.results)
+    assert {result.rule_type for result in evaluation.results} == {
+        "freshness",
+        "row_count",
+    }
+    assert all(
+        result.evidence["executor"] == "placeholder" for result in evaluation.results
+    )
 
 
 def test_get_evaluation_returns_persisted_rule_results(db: Session):

@@ -8,8 +8,8 @@ Create Date: 2026-06-09 14:10:00.000000
 from collections.abc import Sequence
 
 import sqlalchemy as sa
-from alembic import op
 
+from alembic import op
 
 revision: str = "20260609_0002"
 down_revision: str | Sequence[str] | None = "20260609_0001"
@@ -108,7 +108,9 @@ def upgrade() -> None:
         ["id"],
         ondelete="SET NULL",
     )
-    op.create_index(op.f("ix_contracts_dataset_id"), "contracts", ["dataset_id"], unique=False)
+    op.create_index(
+        op.f("ix_contracts_dataset_id"), "contracts", ["dataset_id"], unique=False
+    )
     op.create_table(
         "contract_rules",
         sa.Column("id", sa.Uuid(), nullable=False),
@@ -194,7 +196,9 @@ def upgrade() -> None:
             ["evaluation_runs.id"],
             ondelete="CASCADE",
         ),
-        sa.ForeignKeyConstraint(["rule_id"], ["contract_rules.id"], ondelete="RESTRICT"),
+        sa.ForeignKeyConstraint(
+            ["rule_id"], ["contract_rules.id"], ondelete="RESTRICT"
+        ),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(
@@ -212,7 +216,9 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_index(op.f("ix_evaluation_results_rule_id"), table_name="evaluation_results")
+    op.drop_index(
+        op.f("ix_evaluation_results_rule_id"), table_name="evaluation_results"
+    )
     op.drop_index(
         op.f("ix_evaluation_results_evaluation_run_id"),
         table_name="evaluation_results",
@@ -224,7 +230,9 @@ def downgrade() -> None:
         table_name="evaluation_runs",
     )
     op.drop_table("evaluation_runs")
-    op.drop_index(op.f("ix_contract_rules_contract_version_id"), table_name="contract_rules")
+    op.drop_index(
+        op.f("ix_contract_rules_contract_version_id"), table_name="contract_rules"
+    )
     op.drop_table("contract_rules")
     op.drop_index(op.f("ix_contracts_dataset_id"), table_name="contracts")
     op.drop_constraint(
@@ -232,7 +240,9 @@ def downgrade() -> None:
         "contracts",
         type_="foreignkey",
     )
-    op.drop_index(op.f("ix_contract_versions_contract_id"), table_name="contract_versions")
+    op.drop_index(
+        op.f("ix_contract_versions_contract_id"), table_name="contract_versions"
+    )
     op.drop_table("contract_versions")
     op.drop_table("contracts")
     op.drop_table("datasets")

@@ -11,7 +11,9 @@ class DatasetCreate(BaseModel):
     owner: str | None = Field(default=None, max_length=255)
     description: str | None = Field(default=None, max_length=1000)
 
-    @field_validator("database_name", "schema_name", "table_name", "owner", "description")
+    @field_validator(
+        "database_name", "schema_name", "table_name", "owner", "description"
+    )
     @classmethod
     def strip_blank_strings(cls, value: str | None) -> str | None:
         if value is None:
