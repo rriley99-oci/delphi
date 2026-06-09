@@ -37,3 +37,45 @@ alembic revision --autogenerate -m "add dataset registry"
 ```
 
 The initial migration intentionally creates no product tables. It verifies migration wiring while keeping dataset, contract, evaluation, and violation schemas for their own vertical slices.
+
+## Docker Local Development
+
+The repository root includes a Docker Compose workflow for running the backend with a local PostgreSQL metadata database.
+
+Start the stack from the repository root:
+
+```bash
+docker compose up --build
+```
+
+If your local Docker installation uses the legacy Compose command, run `docker-compose up --build` instead.
+
+The backend is available at:
+
+```text
+http://localhost:8000/api/health
+```
+
+Compose sets the backend database URL to:
+
+```text
+postgresql+psycopg://delphi:delphi@postgres:5432/delphi
+```
+
+The backend container runs `alembic upgrade head` before starting Uvicorn, so local schema changes are applied when the stack starts.
+
+Stop the stack:
+
+```bash
+docker compose down
+```
+
+Legacy Compose equivalent: `docker-compose down`.
+
+Reset the local metadata database volume:
+
+```bash
+docker compose down -v
+```
+
+Legacy Compose equivalent: `docker-compose down -v`.
