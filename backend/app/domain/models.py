@@ -1,12 +1,14 @@
+from __future__ import annotations
+
 from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from uuid import UUID, uuid4
 
 from sqlalchemy import (
+    JSON,
     DateTime,
     ForeignKey,
     Integer,
-    JSON,
     String,
     Text,
     UniqueConstraint,
@@ -16,6 +18,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import Uuid
 
 from app.db.base import Base
+
+if TYPE_CHECKING:
+    from app.db.models import EvaluationResultModel, EvaluationRunModel
 
 
 class Dataset(Base):
@@ -47,9 +52,12 @@ class Dataset(Base):
         nullable=False,
     )
 
-    contracts: Mapped[list["Contract"]] = relationship(
+    contracts: Mapped[list[Contract]] = relationship(
         back_populates="dataset",
         cascade="all, delete-orphan",
+    )
+    evaluations: Mapped[list[EvaluationRunModel]] = relationship(
+        back_populates="dataset"
     )
 
 
@@ -87,12 +95,12 @@ class Contract(Base):
     )
 
     dataset: Mapped[Dataset] = relationship(back_populates="contracts")
-    versions: Mapped[list["ContractVersion"]] = relationship(
+    versions: Mapped[list[ContractVersion]] = relationship(
         back_populates="contract",
         cascade="all, delete-orphan",
         foreign_keys="ContractVersion.contract_id",
     )
-    current_version: Mapped["ContractVersion | None"] = relationship(
+    current_version: Mapped[ContractVersion | None] = relationship(
         foreign_keys=[current_version_id],
         post_update=True,
     )
@@ -135,13 +143,16 @@ class ContractVersion(Base):
         back_populates="versions",
         foreign_keys=[contract_id],
     )
-    previous_version: Mapped["ContractVersion | None"] = relationship(
+    previous_version: Mapped[ContractVersion | None] = relationship(
         remote_side=[id],
         foreign_keys=[previous_version_id],
     )
-    rules: Mapped[list["ContractRule"]] = relationship(
+    rules: Mapped[list[ContractRule]] = relationship(
         back_populates="version",
         cascade="all, delete-orphan",
+    )
+    evaluations: Mapped[list[EvaluationRunModel]] = relationship(
+        back_populates="contract_version",
     )
 
 
@@ -169,3 +180,6 @@ class ContractRule(Base):
     )
 
     version: Mapped[ContractVersion] = relationship(back_populates="rules")
+    evaluation_results: Mapped[list[EvaluationResultModel]] = relationship(
+        back_populates="rule",
+    )

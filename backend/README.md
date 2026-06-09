@@ -25,7 +25,15 @@ postgresql+psycopg://delphi:delphi@localhost:5432/delphi
 Install backend dependencies for local development:
 
 ```bash
-python -m pip install -e ".[dev]"
+uv sync --extra dev
+```
+
+Run the same backend quality checks used by CI:
+
+```bash
+uv run black --check .
+uv run ruff check .
+uv run pytest tests
 ```
 
 Run Alembic commands from this `backend/` directory:

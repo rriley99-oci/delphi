@@ -20,5 +20,6 @@ class RuleOutcome:
 class RuleExecutor(Protocol):
     rule_type: str
 
-    async def evaluate(self, context: EvaluationContext, rule: ContractRule) -> RuleOutcome:
-        ...
+    async def evaluate(
+        self, context: EvaluationContext, rule: ContractRule
+    ) -> RuleOutcome: ...
