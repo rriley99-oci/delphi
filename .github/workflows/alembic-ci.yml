@@ -1,0 +1,93 @@
+name: Alembic CI
+
+on:
+  pull_request:
+    paths:
+      - "backend/alembic/**"
+      - "backend/app/domain/**"
+      - "backend/app/db/**"
+      - "backend/app/core/config.py"
+      - "backend/pyproject.toml"
+      - "backend/uv.lock"
+      - ".github/workflows/alembic-ci.yml"
+  push:
+    branches:
+      - development
+    paths:
+      - "backend/alembic/**"
+      - "backend/app/domain/**"
+      - "backend/app/db/**"
+      - "backend/app/core/config.py"
+      - "backend/pyproject.toml"
+      - "backend/uv.lock"
+      - ".github/workflows/alembic-ci.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  alembic-validation:
+    name: Validate Alembic migrations
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: delphi
+          POSTGRES_USER: delphi
+          POSTGRES_PASSWORD: delphi
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U delphi -d delphi"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DELPHI_DATABASE_URL: postgresql+psycopg://delphi:delphi@localhost:5432/delphi
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install backend dependencies
+        run: uv sync --extra dev
+
+      - name: Show Alembic history
+        run: uv run alembic history --verbose
+
+      - name: Require exactly one Alembic head
+        run: |
+          set -euo pipefail
+          uv run alembic heads --verbose
+          head_count="$(uv run alembic heads | sed '/^[[:space:]]*$/d' | wc -l | tr -d ' ')"
+          if [ "${head_count}" != "1" ]; then
+            echo "Expected exactly one Alembic head, found ${head_count}."
+            echo "Run 'uv run alembic heads --verbose' from backend/ to inspect revision lineage."
+            exit 1
+          fi
+
+      - name: Render offline upgrade SQL
+        run: uv run alembic upgrade head --sql > /tmp/alembic-upgrade.sql
+
+      - name: Apply migrations to Postgres
+        run: uv run alembic upgrade head
+
+      - name: Report applied revision
+        run: uv run alembic current --verbose
