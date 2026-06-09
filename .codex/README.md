@@ -29,6 +29,7 @@ Current skills:
 - `delphi-ui-slice`
 - `delphi-contract-rules`
 - `delphi-github-workflow`
+- `delphi-issue-runner-automation`
 - `delphi-maintain-playbook`
 - `delphi-work-issue`
 

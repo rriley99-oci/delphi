@@ -45,7 +45,31 @@ Reason:
 - added `delphi-work-issue` to codify the issue to plan to PR workflow
 - added an issue automation contract document for the planned Phase 2 `In Progress` trigger
 - aligned the automation path with an organization project so the runner can use org-project events instead of a personal-project workaround
+- updated the playbook so ordinary Codex-created PRs target `development` instead of `main`
 
 Reason:
 
 - establish a deliberate, non-chaotic path for issue-driven Codex execution and future automation
+
+## 2026-06-09
+
+### Deterministic issue runner automation
+
+- added `delphi-issue-runner-automation` to encode the exact local-checkout runner contract
+- updated the issue workflow skill so planning happens before branch creation in the automation flow
+- updated the automation contract and technical design to use project item list reconciliation, plan id markers, and `rocket` reaction approval on the exact plan comment
+- added a visible `codex:owned` soft-lock label convention for the hourly poller to reduce duplicate starts
+
+Reason:
+
+- align the local Codex playbook with the new deterministic GitHub-driven runner behavior before implementation begins
+
+### Label-driven runner state machine
+
+- replaced the reaction and soft-lock model with a strict label workflow: `codex:ready`, `codex:planned`, `codex:approved`, `codex:running`, `codex:in-review`
+- updated the automation contract so planning and execution are driven by label transitions
+- added idempotent error-comment guidance using stable hidden markers so the hourly poller does not spam unresolved issues
+
+Reason:
+
+- make the simple scheduled automation easier to operate and safer to run repeatedly

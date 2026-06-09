@@ -19,6 +19,12 @@ When working in this repo:
 - Versioned contracts, evaluation history, and violation lifecycle as first-class concepts
 - Natural language answers grounded in Delphi metadata only
 
+## Git Workflow
+
+- Default feature work should branch from and open PRs against `development`.
+- `main` is a lead-managed integration branch and should not be the ordinary target for Codex-created PRs.
+- If branch targeting is ambiguous, prefer `development` and surface that assumption clearly.
+
 ## Playbook Maintenance
 
 The repository playbook under `.codex/` should evolve with the project.

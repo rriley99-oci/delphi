@@ -4,51 +4,77 @@
 
 This document defines the Phase 2 design for an issue-driven Codex runner for Delphi.
 
-The runner starts work only after a GitHub issue is deliberately moved to `In Progress` on the organization project board, generates a plan for approval, and only then proceeds with implementation and PR creation.
+The runner starts only after a GitHub issue is deliberately moved to `In Progress` on the organization project board. It plans work when the issue is labeled `codex:ready`, waits for a human to move the issue to `codex:approved`, then executes, opens a PR against `development`, and moves the issue to `codex:in-review`.
 
-The goal is to create a safe, reviewable automation path that avoids accidental chain reactions while reducing the manual overhead of starting work on approved tickets.
+The goal is a safe, reviewable automation path that remains quiet when nothing changed and avoids repeated comment spam on unresolved problems.
 
 ## Goals
 
 - Start Codex work only from a deliberate project workflow signal
-- Use organization-project events rather than issue-open events
-- Require explicit plan approval before implementation
-- Prevent duplicate sessions and ambiguous branch state
+- Use organization-project state as the intake source of truth
+- Use a simple label-based state machine for planning and execution
+- Prevent duplicate sessions and repeated blocking comments
 - Keep GitHub issue, branch, plan, and PR state traceable
 - Align with the existing Delphi `delphi-work-issue` and `delphi-github-workflow` skills
 
 ## Non-Goals
 
-- Full autonomous issue intake from newly opened issues
-- Automatic implementation without a plan approval gate
-- Complex multi-issue orchestration
-- Generic multi-repo agent infrastructure beyond what Delphi needs first
+- Full autonomous intake from newly opened issues
+- Automatic implementation without a human approval step
+- Multi-issue orchestration beyond a simple first-match poller
 - Replacement of GitHub project workflow with a custom workflow system
 
 ## Trigger Model
 
 ### Source of truth
 
-The source of truth for work intake is:
+The source of truth for intake is:
 
 - GitHub organization project `oci-ai-incubations/17`
 
+The deterministic reconciliation command is:
+
+```bash
+gh project item-list 17 --owner oci-ai-incubations --format json
+```
+
 ### Trigger condition
 
-The runner starts only when:
+The runner acts only on a project item where:
 
-- a project item representing a GitHub issue transitions to `In Progress`
+- `repository` is `https://github.com/rriley99-oci/delphi`
+- project status is `In Progress`
+- the issue has label `codex:ready` or `codex:approved`
 
 It must not start on:
 
-- issue creation
-- issue edits
-- label changes alone
+- issue creation alone
 - arbitrary comments
+- unrelated label changes
 
-### Why this trigger
+## Workflow Labels
 
-This model creates an explicit human gate before automation starts and avoids runaway issue-processing behavior.
+Use exactly one Codex workflow label at a time:
+
+- `codex:ready`
+- `codex:planned`
+- `codex:approved`
+- `codex:running`
+- `codex:in-review`
+
+Meaning:
+
+- `codex:ready`: Codex may plan
+- `codex:planned`: plan has been posted and is waiting on a human
+- `codex:approved`: human approved the plan and Codex may execute
+- `codex:running`: Codex claimed execution and is actively working
+- `codex:in-review`: PR is open and the issue is waiting on review
+
+If more than one workflow label is present:
+
+- treat it as a blocking error
+- post one idempotent error comment
+- stop
 
 ## High-Level Flow
 
@@ -57,169 +83,115 @@ sequenceDiagram
     participant User
     participant GitHub
     participant Runner
-    participant Store
     participant Codex
 
-    User->>GitHub: Move issue to In Progress
-    GitHub->>Runner: Project item event
-    Runner->>Store: Check idempotency and run state
-    Runner->>GitHub: Fetch issue and project context
+    User->>GitHub: Move issue to In Progress and add codex:ready
+    Runner->>GitHub: Read project item list and issue state
     Runner->>Codex: Start planning run
-    Codex->>GitHub: Plan comment or update
-    Runner->>Store: Mark plan_ready
-    User->>GitHub: Approve plan
-    Runner->>GitHub: Detect approval
-    Runner->>Codex: Resume execution
+    Codex->>GitHub: Post plan comment
+    Codex->>GitHub: Replace codex:ready with codex:planned
+    User->>GitHub: Replace codex:planned with codex:approved
+    Runner->>GitHub: Read approved issue state
+    Runner->>Codex: Start execution run
+    Codex->>GitHub: Replace codex:approved with codex:running
     Codex->>GitHub: Push branch and create PR
-    Runner->>Store: Mark pr_open
+    Codex->>GitHub: Comment PR URL and replace codex:running with codex:in-review
 ```
 
 ## System Components
 
-### 1. Webhook Receiver
+### GitHub Adapter
 
 Responsibilities:
 
-- receive GitHub webhook events
-- verify webhook signature
-- filter for project-related events
-- normalize the payload into an internal event
-
-Inputs:
-
-- GitHub organization project events related to project item changes
-
-Outputs:
-
-- internal runner event such as `issue_moved_to_in_progress`
-
-### 2. Event Filter
-
-Responsibilities:
-
-- confirm the event belongs to project `17`
-- confirm the item is a GitHub issue
-- confirm the status changed to `In Progress`
-- ignore irrelevant transitions
-
-This layer should be intentionally strict.
-
-### 3. Run State Store
-
-Responsibilities:
-
-- ensure one active run per issue
-- track the phase of work
-- support resume after plan approval
-- prevent duplicate handling from repeated webhook deliveries
-
-Recommended first implementation:
-
-- PostgreSQL table in a small runner service database
-
-Acceptable early fallback:
-
-- SQLite if the runner is initially single-instance
-
-### 4. GitHub Adapter
-
-Responsibilities:
-
-- fetch issue details
-- fetch project item metadata
+- read the organization project item list
+- fetch issue details, labels, comments, and open PR state
 - post plan comments
-- inspect comments for approval
-- update issue or project state later if needed
-- open PR links or comments when not handled directly by Codex
+- mutate workflow labels safely
+- post one-time blocking comments when human intervention is required
+- post PR completion comments
 
-Use:
-
-- GitHub GraphQL API for project-specific metadata
-- GitHub REST or `gh` CLI for issue and PR operations where practical
-
-### 5. Codex Executor
-
-Responsibilities:
-
-- start a plan-generation run for the target issue
-- start or resume the implementation run after approval
-- run in a checked-out working directory with git access
-
-Recommended first implementation:
-
-- a dedicated worker host or container that invokes Codex locally or through the chosen Codex execution interface
+### Codex Executor
 
 Responsibilities during planning:
 
-- fetch issue context
-- create branch
-- draft plan
-- stop for approval
+- inspect the issue carefully
+- draft a concise plan grounded in acceptance criteria
+- choose branch name `codex/issue-<number>-<slug>`
+- post a plan comment with `<!-- codex-plan-id: PLAN_ID -->`
+- move the label from `codex:ready` to `codex:planned`
 
 Responsibilities during execution:
 
-- implement approved plan
-- run relevant checks
-- push branch
-- open PR
+- verify a plan comment exists
+- move the label from `codex:approved` to `codex:running`
+- align to `origin/development`
+- create or switch to the issue branch
+- implement the work
+- run relevant checks honestly
+- push the branch
+- open a PR with `Closes #<number>`
+- comment the PR URL and plan id
+- move the label to `codex:in-review`
 
-### 6. Approval Watcher
+## Planning Contract
 
-Responsibilities:
+The plan comment should include:
 
-- detect explicit user approval after plan publication
-- resume the run only after approval is present
+- `<!-- codex-plan-id: PLAN_ID -->`
+- intended branch name
+- concise implementation plan
+- intended verification
+- instructions telling the human to change the label to `codex:approved` when ready
 
-Recommended first approval mechanism:
+Planning must not:
 
-- issue comment containing a clear approval token such as `approved`
+- create a branch
+- begin implementation
+- repeat the same error comment endlessly
 
-Why this first:
+## Execution Contract
 
-- simple to implement
-- visible in GitHub
-- explicit and auditable
+Execution may begin only when:
 
-## State Model
+- the issue is still `In Progress`
+- the issue has exactly one Codex workflow label
+- that label is `codex:approved` or `codex:running`
+- a Codex plan comment exists
+- no open PR already exists
 
-The runner should manage a small explicit state machine.
+If an open PR already exists:
 
-### States
+- move the issue to `codex:in-review`
+- do not start work again
 
-- `detected`
-- `claimed`
-- `planning`
-- `plan_ready`
-- `approved`
-- `executing`
-- `pr_open`
-- `done`
-- `failed`
-- `cancelled`
+## Error Comment Protocol
 
-### State transitions
+Blocking comments must be idempotent.
 
-```mermaid
-stateDiagram-v2
-    [*] --> detected
-    detected --> claimed
-    claimed --> planning
-    planning --> plan_ready
-    plan_ready --> approved
-    approved --> executing
-    executing --> pr_open
-    pr_open --> done
-    planning --> failed
-    executing --> failed
-    plan_ready --> cancelled
-    approved --> cancelled
+Use stable hidden markers such as:
+
+```html
+<!-- codex-error: multiple-state-labels -->
+<!-- codex-error: approved-without-plan -->
+<!-- codex-error: planned-without-plan-comment -->
+<!-- codex-error: running-state-conflict -->
 ```
 
-### Idempotency rules
+Rules:
 
-- repeated deliveries of the same project event must not create multiple runs
-- only one active non-terminal run may exist per issue
-- a new `In Progress` event for an already-claimed issue should be ignored unless the prior run is terminal or explicitly cancelled
+- scan existing comments before posting a blocking comment
+- if the exact marker already exists, remain silent
+- comment only when a human needs to intervene
+- do not comment repeatedly for waiting states or no-op polls
+
+## Idempotency Rules
+
+- Only one active non-terminal run may exist per issue
+- Only one Codex workflow label may be present at a time
+- A repeated poll against the same unresolved state must not create duplicate comments
+- A repeated poll against `codex:planned` should remain silent
+- A repeated poll against `codex:approved` with an existing PR should move to `codex:in-review` instead of restarting
 
 ## Data Model
 
@@ -231,261 +203,67 @@ Fields:
 - `repo_owner`
 - `repo_name`
 - `issue_number`
-- `issue_node_id`
 - `project_number`
 - `project_item_id`
 - `trigger_status`
+- `workflow_label`
 - `branch_name`
-- `state`
 - `plan_comment_id`
-- `approval_comment_id`
+- `plan_id`
 - `pr_number`
 - `pr_url`
-- `codex_session_ref`
-- `detected_at`
-- `updated_at`
+- `state`
 - `error_message`
-
-Optional later table: `issue_runner_event_log`
-
-Purpose:
-
-- retain raw or normalized event history for debugging and auditability
-
-## GitHub Integration Design
-
-### Project event intake
-
-Preferred source:
-
-- organization-project item events for project `17`
-
-The runner should normalize event data into:
-
-- project id
-- project item id
-- linked issue id
-- old status
-- new status
-
-### Issue detail fetch
-
-For each triggered issue, fetch:
-
-- issue number
-- title
-- body
-- labels
-- assignees
-- comments
-- repository information
-
-### Plan publication
-
-The first implementation should post the plan as an issue comment.
-
-The plan comment should include:
-
-- branch name
-- concise implementation plan
-- intended verification
-- explicit approval instructions
-
-Suggested approval instruction:
-
-- comment `approved` on this issue to start execution
-
-### PR linkage
-
-The implementation PR should contain:
-
-- `Closes #<issue-number>` or `Fixes #<issue-number>`
-
-The runner or Codex should also post the PR URL back to the issue once created.
-
-## Codex Execution Design
-
-### Planning run
-
-Inputs:
-
-- repo path or cloned worktree
-- issue number and issue text
-- repo-local playbook under `.codex/`
-- instruction to use `delphi-work-issue`
-
-Outputs:
-
-- working branch
-- implementation plan
-- optional issue comment with plan
-
-### Execution run
-
-Inputs:
-
-- prior run state
-- approved plan
-- branch context
-- issue number
-
-Outputs:
-
-- code changes
-- verification results
-- pushed branch
-- PR URL
-
-### Branch naming
-
-Use:
-
-- `codex/issue-<number>-<slug>`
-
-The runner should reserve and persist the branch name when planning starts.
+- `updated_at`
 
 ## Failure Handling
 
-### Event-level failures
+Planning failures:
 
-Examples:
+- GitHub auth missing
+- plan comment cannot be posted
+- label state cannot be updated safely
 
-- malformed webhook payload
-- unknown project item shape
-- issue no longer exists
-
-Handling:
-
-- log and mark the event as ignored or failed
-- do not retry blindly if the payload is invalid
-
-### Planning failures
-
-Examples:
+Execution failures:
 
 - branch cannot be created
-- GitHub auth missing
-- Codex executor fails before plan publication
-
-Handling:
-
-- mark run `failed`
-- post a short issue comment if appropriate
-- avoid auto-retrying until a human intervenes or explicitly retries
-
-### Approval timeout
-
-Examples:
-
-- plan remains unapproved for too long
-
-Handling:
-
-- keep the run in `plan_ready`
-- optionally alert or mark stale after a threshold
-- do not auto-cancel too aggressively in the first version
-
-### Execution failures
-
-Examples:
-
 - tests fail
 - push fails
 - PR creation fails
 
 Handling:
 
-- mark run `failed`
-- persist error detail
-- surface outcome clearly in GitHub or runner logs
+- mark the run failed in the runner state
+- record the reason clearly
+- post one blocking comment only when a human can act on it
+- avoid retry loops that create repeated issue noise
 
 ## Security and Safety
 
-- verify GitHub webhook signatures
 - use least-privilege GitHub credentials
-- separate GitHub app credentials from repo secrets
-- do not execute arbitrary code from issue comments beyond the explicit approval token
-- do not allow issue text alone to bypass plan approval
-- isolate runner execution environment from unrelated repos or credentials
-
-## Observability
-
-The runner should emit:
-
-- webhook receipt logs
-- normalized event logs
-- state transition logs
-- Codex run start and end logs
-- approval detection logs
-- PR creation logs
-
-Metrics to track:
-
-- events received
-- runs started
-- plans posted
-- approvals received
-- PRs opened
-- failures by phase
-- duplicate events ignored
+- do not allow issue text alone to bypass approval
+- do not execute arbitrary instructions from comments beyond the defined plan protocol
+- isolate the runner environment from unrelated repos and credentials
 
 ## Rollout Plan
 
-### Phase 2A: Plan-only automation
+### Phase 2A
 
-Build:
-
-- webhook receiver
-- event filter
-- run state store
-- GitHub adapter
-- Codex planning run only
-- plan comment publication
-
-Do not execute code automatically yet.
+- hourly poller
+- project item reconciliation
+- label-driven planning
+- idempotent blocking comments
 
 Success criteria:
 
-- moving an issue to `In Progress` reliably produces one plan comment and one reserved working branch
+- an `In Progress` issue with `codex:ready` receives one plan comment and moves to `codex:planned`
 
-### Phase 2B: Approval-driven execution
+### Phase 2B
 
-Add:
-
-- approval watcher
-- execution run
-- push and PR creation
+- label-driven execution
+- branch, push, and PR creation
+- issue update to `codex:in-review`
 
 Success criteria:
 
-- approved issues progress from plan to PR without duplicate runs
-
-### Phase 2C: Project updates and polish
-
-Add:
-
-- project status updates such as `PR Open`
-- stale-run handling
-- retry or resume support
-- richer operator visibility
-
-## Open Questions
-
-These should be resolved before implementation:
-
-1. Will the runner use a GitHub App, org webhook, or another org-level integration path?
-2. What exact approval token or comment format should count as approval?
-3. Where should the Codex executor run: dedicated VM, containerized worker, or CI-like environment?
-4. Should plan comments be edited in place or posted as new comments on retries?
-5. Should PRs also be added back to project `17` automatically?
-
-## Recommendation
-
-Start with the smallest safe slice:
-
-- org-project event intake
-- idempotent run tracking
-- plan generation only
-- issue-comment approval gate
-
-That proves the workflow contract without letting automation code its way into a mess before the control plane is trustworthy.
+- an approved issue progresses from `codex:approved` to PR without duplicate runs

@@ -36,6 +36,11 @@ Before any GitHub action:
 
 If GitHub CLI auth is missing, stop and tell the user to run `gh auth login` or provide a valid token before continuing.
 
+For ordinary feature work in Delphi:
+
+- use `development` as the default PR base branch
+- do not target `main` unless the user explicitly asks or a lead-managed integration step is being performed
+
 ## 2. Choose the workflow
 
 Use one of these paths.
@@ -170,7 +175,7 @@ Before opening a PR:
 1. review `git status --short`
 2. review the branch diff and recent commits
 3. push the branch explicitly
-4. resolve the target base branch deliberately
+4. resolve the target base branch deliberately, defaulting to `development` for normal work
 
 PR body should be grounded in the actual diff and commit history, not guessed.
 
@@ -192,6 +197,8 @@ Rules:
 - Keep the PR title concise and specific.
 - Show a full preview before posting.
 - Require explicit confirmation before running `gh pr create`.
+- Default the PR base branch to `development` unless the user explicitly directs otherwise.
+- Treat `main` as a lead-managed merge target, not the normal destination for feature PRs.
 
 Preferred command pattern:
 
