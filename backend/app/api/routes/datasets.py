@@ -16,7 +16,7 @@ router = APIRouter()
 
 
 @router.post("", response_model=DatasetRead, status_code=status.HTTP_201_CREATED)
-def register_dataset(
+async def register_dataset(
     dataset_create: DatasetCreate,
     db: Session = Depends(get_db),
 ) -> DatasetRead:
@@ -30,12 +30,15 @@ def register_dataset(
 
 
 @router.get("", response_model=DatasetList)
-def list_registered_datasets(db: Session = Depends(get_db)) -> DatasetList:
+async def read_datasets(db: Session = Depends(get_db)) -> DatasetList:
     return DatasetList(items=list_datasets(db))
 
 
 @router.get("/{dataset_id}", response_model=DatasetRead)
-def read_dataset(dataset_id: UUID, db: Session = Depends(get_db)) -> DatasetRead:
+async def read_dataset(
+    dataset_id: UUID,
+    db: Session = Depends(get_db),
+) -> DatasetRead:
     dataset = get_dataset(db, dataset_id)
     if dataset is None:
         raise HTTPException(
