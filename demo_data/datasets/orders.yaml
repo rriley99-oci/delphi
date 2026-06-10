@@ -1,0 +1,18 @@
+identity:
+  database: delphi_source
+  schema: sales
+  table: orders
+load_strategy: incremental
+description: Incremental commerce order facts.
+time_semantics:
+  freshness_column: updated_at
+  append_column: ordered_at
+generator_hints:
+  primary_key: order_id
+  baseline_days: 45
+  incremental_days_per_load: 1
+  orders_per_day: 6
+  supports_rules:
+    - freshness
+    - row_count_minimum
+    - custom_sql_status_domain_check

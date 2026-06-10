@@ -1,0 +1,18 @@
+identity:
+  database: delphi_source
+  schema: crm
+  table: customers
+load_strategy: incremental
+description: Deterministic customer dimension-style records.
+time_semantics:
+  freshness_column: updated_at
+  append_column: created_at
+generator_hints:
+  primary_key: customer_id
+  natural_key: email
+  baseline_rows: 120
+  incremental_rows_per_load: 3
+  supports_rules:
+    - freshness
+    - row_count_minimum
+    - custom_sql_duplicate_email_check
