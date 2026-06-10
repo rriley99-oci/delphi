@@ -3,7 +3,7 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
-from app.domain.models import Contract, ContractRule, ContractVersion, Dataset
+from app.db.models import ContractModel, ContractRuleModel, ContractVersionModel, DatasetModel
 from app.schemas.contracts import ContractCreate
 
 
@@ -11,24 +11,24 @@ class DatasetNotFoundError(Exception):
     pass
 
 
-def create_contract(db: Session, contract_create: ContractCreate) -> Contract:
-    dataset = db.get(Dataset, contract_create.dataset_id)
+def create_contract(db: Session, contract_create: ContractCreate) -> ContractModel:
+    dataset = db.get(DatasetModel, contract_create.dataset_id)
     if dataset is None:
         raise DatasetNotFoundError
 
-    contract = Contract(
+    contract = ContractModel(
         dataset_id=contract_create.dataset_id,
         name=contract_create.name,
     )
     db.add(contract)
     db.flush()
 
-    version = ContractVersion(
+    version = ContractVersionModel(
         contract_id=contract.id,
         version_number=1,
         change_reason=contract_create.change_reason,
         rules=[
-            ContractRule(
+            ContractRuleModel(
                 rule_type=rule.rule_type,
                 severity=rule.severity,
                 name=rule.name,
@@ -46,26 +46,26 @@ def create_contract(db: Session, contract_create: ContractCreate) -> Contract:
     return get_contract(db, contract.id) or contract
 
 
-def list_contracts(db: Session) -> list[Contract]:
+def list_contracts(db: Session) -> list[ContractModel]:
     result = db.execute(
-        select(Contract)
+        select(ContractModel)
         .options(
-            selectinload(Contract.current_version).selectinload(
-                ContractVersion.rules,
+            selectinload(ContractModel.current_version).selectinload(
+                ContractVersionModel.rules,
             ),
         )
-        .order_by(Contract.created_at, Contract.id),
+        .order_by(ContractModel.created_at, ContractModel.id),
     )
     return list(result.scalars())
 
 
-def get_contract(db: Session, contract_id: UUID) -> Contract | None:
+def get_contract(db: Session, contract_id: UUID) -> ContractModel | None:
     result = db.execute(
-        select(Contract)
-        .where(Contract.id == contract_id)
+        select(ContractModel)
+        .where(ContractModel.id == contract_id)
         .options(
-            selectinload(Contract.current_version).selectinload(
-                ContractVersion.rules,
+            selectinload(ContractModel.current_version).selectinload(
+                ContractVersionModel.rules,
             ),
         ),
     )

@@ -56,19 +56,21 @@ alembic upgrade head
 alembic revision --autogenerate -m "add dataset registry"
 ```
 
-The initial migration intentionally creates no product tables. It verifies migration wiring while keeping dataset, contract, evaluation, and violation schemas for their own vertical slices.
+The migration chain now covers the current POC persistence slices for datasets,
+contracts, evaluations, and violations.
 
-## Docker Local Development
+## Podman Local Development
 
-The repository root includes a Docker Compose workflow for running the backend with a local PostgreSQL metadata database.
+The repository root includes a Compose workflow for running the backend with a local PostgreSQL metadata database under Podman.
 
 Start the stack from the repository root:
 
 ```bash
-docker compose up --build
+podman machine start
+podman-compose up --build
 ```
 
-If your local Docker installation uses the legacy Compose command, run `docker-compose up --build` instead.
+If the Podman machine is already running, the `podman machine start` command is safe to re-run.
 
 The backend is available at:
 
@@ -87,15 +89,11 @@ The backend container runs `alembic upgrade head` before starting Uvicorn, so lo
 Stop the stack:
 
 ```bash
-docker compose down
+podman-compose down
 ```
-
-Legacy Compose equivalent: `docker-compose down`.
 
 Reset the local metadata database volume:
 
 ```bash
-docker compose down -v
+podman-compose down -v
 ```
-
-Legacy Compose equivalent: `docker-compose down -v`.

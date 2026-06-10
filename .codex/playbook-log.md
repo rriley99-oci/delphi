@@ -73,3 +73,14 @@ Reason:
 Reason:
 
 - make the simple scheduled automation easier to operate and safer to run repeatedly
+
+## 2026-06-10
+
+### Project terminology hardening
+
+- updated `AGENTS.md` and the GitHub workflow skill so "the project" defaults to GitHub org project `oci-ai-incubations/17`, not the Delphi repository
+- added explicit preview guidance to restate whether "project" means the org project or the repo before side-effecting GitHub actions
+
+Reason:
+
+- prevent repeated confusion between the repository target and the organization project board during ticket workflows

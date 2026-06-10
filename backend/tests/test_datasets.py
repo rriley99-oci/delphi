@@ -6,7 +6,7 @@ from sqlalchemy.pool import StaticPool
 
 from app.db.base import Base
 from app.db.session import get_db
-from app.domain.models import Dataset
+from app.db.models import DatasetModel
 from app.main import create_app
 from app.schemas.datasets import DatasetCreate
 from app.services.datasets import (
@@ -152,6 +152,6 @@ def test_get_dataset_api_returns_not_found_for_unknown_id(client):
 
 
 def test_dataset_model_declares_identity_unique_constraint():
-    constraints = {constraint.name for constraint in Dataset.__table__.constraints}
+    constraints = {constraint.name for constraint in DatasetModel.__table__.constraints}
 
     assert "uq_datasets_identity" in constraints

@@ -7,6 +7,13 @@ description: Work Delphi GitHub issues and pull requests with GitHub CLI. Use wh
 
 Use this skill for GitHub issue and PR work in the Delphi repo.
 
+Important terminology default for this repository:
+
+- "repo" means the GitHub repository, usually `rriley99-oci/delphi`
+- "project" means the GitHub organization project `oci-ai-incubations/17`
+
+Do not silently treat the repository as the project when the user says "project."
+
 This skill is grounded in the current GitHub CLI workflow documented by GitHub:
 
 - `gh issue create`
@@ -33,6 +40,7 @@ Before any GitHub action:
 2. run `gh auth status`
 3. confirm the current branch when PR work is involved
 4. inspect working tree state before pushing or creating a PR
+5. if the user mentions "the project", resolve that to GitHub org project `oci-ai-incubations/17` unless they explicitly say otherwise
 
 If GitHub CLI auth is missing, stop and tell the user to run `gh auth login` or provide a valid token before continuing.
 
@@ -236,6 +244,13 @@ A preview should include:
 - project assignment target when relevant
 - full body text
 
+When the request uses the word "project", explicitly restate whether that means:
+
+- GitHub org project `oci-ai-incubations/17`, or
+- the Delphi repository itself
+
+Default to the org project, not the repo.
+
 ## 7. Delphi-specific expectations
 
 - Work inside the current Delphi repo unless the user explicitly names another target.
@@ -244,6 +259,7 @@ A preview should include:
 - Reflect actual testing honestly. Do not claim checks passed unless they were run.
 - When a ticket drives implementation, keep the final PR tightly linked back to that ticket.
 - For issue creation, default to adding the issue to GitHub project `oci-ai-incubations/17`.
+- When a user asks to add something to "the project" or create a ticket for "the project", interpret that as GitHub org project `oci-ai-incubations/17` and say so explicitly in the preview.
 
 ## 8. Safe defaults
 

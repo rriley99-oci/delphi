@@ -4,6 +4,29 @@ Delphi is a Kubernetes-native Data Observability & Trust platform for defining, 
 
 This repository starts with the product vision, a reference architecture, and an initial scaffold for a proof of concept (POC) focused on contract management, on-demand evaluation, violation tracking, natural language querying, and health visualization.
 
+## Local Run
+
+The current local runnable surface is the backend API plus a Postgres metadata database.
+
+Use Podman Compose from the repository root:
+
+```bash
+podman machine start
+podman-compose up --build
+```
+
+The backend will be available at:
+
+```text
+http://localhost:8000/api/health
+```
+
+Stop the stack with:
+
+```bash
+podman-compose down
+```
+
 ## Repository Layout
 
 - `docs/product-spec.md`: product requirements and UX intent

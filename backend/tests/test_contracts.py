@@ -6,7 +6,7 @@ from sqlalchemy.pool import StaticPool
 
 from app.db.base import Base
 from app.db.session import get_db
-from app.domain.models import Contract, ContractVersion
+from app.db.models import ContractModel, ContractVersionModel
 from app.main import create_app
 from app.schemas.contracts import ContractCreate
 from app.schemas.datasets import DatasetCreate
@@ -182,10 +182,10 @@ def test_register_contract_api_validates_rule_config(client, dataset):
 
 def test_contract_model_declares_version_constraints():
     contract_constraints = {
-        constraint.name for constraint in Contract.__table__.constraints
+        constraint.name for constraint in ContractModel.__table__.constraints
     }
     version_constraints = {
-        constraint.name for constraint in ContractVersion.__table__.constraints
+        constraint.name for constraint in ContractVersionModel.__table__.constraints
     }
 
     assert "fk_contracts_dataset_id_datasets" in contract_constraints
