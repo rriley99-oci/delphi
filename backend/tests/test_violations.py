@@ -158,7 +158,7 @@ def test_service_rejects_acknowledging_resolved_violation(db_session: Session):
 
 def test_migration_defines_unresolved_rule_unique_index():
     migration = Path(__file__).parents[1] / (
-        "alembic/versions/20260609_0002_violations.py"
+        "alembic/versions/20260609_0005_violations.py"
     )
 
     migration_text = migration.read_text()

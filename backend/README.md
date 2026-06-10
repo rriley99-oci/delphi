@@ -36,6 +36,18 @@ uv run ruff check .
 uv run pytest tests
 ```
 
+Run the same Alembic validation checks used by the migration CI:
+
+```bash
+uv run alembic history --verbose
+uv run alembic heads --verbose
+uv run alembic upgrade head --sql > /tmp/alembic-upgrade.sql
+```
+
+The Alembic CI workflow also applies `uv run alembic upgrade head` against a
+temporary PostgreSQL service so migration lineage and upgrade execution are both
+validated before merge.
+
 Run Alembic commands from this `backend/` directory:
 
 ```bash

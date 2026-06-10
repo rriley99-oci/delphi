@@ -1,7 +1,7 @@
 """Add violation lifecycle persistence.
 
-Revision ID: 20260609_0002_violations
-Revises: 20260609_0001
+Revision ID: 20260609_0005
+Revises: 20260609_0004
 Create Date: 2026-06-09 14:20:00.000000
 """
 
@@ -12,8 +12,8 @@ from sqlalchemy.dialects import postgresql
 
 from alembic import op
 
-revision: str = "20260609_0002_violations"
-down_revision: str | Sequence[str] | None = "20260609_0001"
+revision: str = "20260609_0005"
+down_revision: str | Sequence[str] | None = "20260609_0004"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
