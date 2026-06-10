@@ -25,19 +25,27 @@ and authoring freshness, row-count, or custom SQL contracts.
 Use a source database distinct from the Delphi metadata database. The loaders
 read `DELPHI_DEMO_SOURCE_DATABASE_URL` unless `--database-url` is passed.
 
-Example local URL:
+Example local URL when using the repository root Compose stack:
 
 ```text
-postgresql://delphi:delphi@localhost:5432/delphi_source
+postgresql://delphi:delphi@localhost:5433/delphi_source
 ```
 
-Create the source database if it does not exist, then run the loaders with the
-backend environment so `psycopg` is available:
+Start the root Compose stack first, then run the loaders with the backend
+environment so `psycopg` is available:
 
 ```bash
+podman-compose up --build
 cd backend
-PYTHONPATH=.. uv run python -m demo_data.seed --database-url postgresql://delphi:delphi@localhost:5432/delphi_source
-PYTHONPATH=.. uv run python -m demo_data.incremental --as-of 2026-03-01T12:00:00Z --database-url postgresql://delphi:delphi@localhost:5432/delphi_source
+PYTHONPATH=.. uv run python -m demo_data.seed --database-url postgresql://delphi:delphi@localhost:5433/delphi_source
+PYTHONPATH=.. uv run python -m demo_data.incremental --as-of 2026-03-01T12:00:00Z --database-url postgresql://delphi:delphi@localhost:5433/delphi_source
+```
+
+The repository root `Makefile` wraps the same commands:
+
+```bash
+make demo-seed
+make demo-incremental
 ```
 
 When running from `backend/`, set `PYTHONPATH=..` if your shell does not already
