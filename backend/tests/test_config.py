@@ -34,3 +34,17 @@ def test_settings_keep_local_postgres_default():
     settings = Settings()
 
     assert settings.database_url.startswith("postgresql+psycopg://")
+
+
+def test_settings_enable_debug_sql_by_default():
+    settings = Settings()
+
+    assert settings.debug_sql_enabled is True
+
+
+def test_settings_read_debug_sql_flag_from_env(monkeypatch):
+    monkeypatch.setenv("DELPHI_DEBUG_SQL_ENABLED", "false")
+
+    settings = Settings()
+
+    assert settings.debug_sql_enabled is False

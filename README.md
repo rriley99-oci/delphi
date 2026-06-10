@@ -15,6 +15,9 @@ podman machine start
 podman-compose up --build
 ```
 
+The local databases use Quay-hosted PostgreSQL images so the stack can run in
+environments where Docker Hub pulls are blocked or untrusted.
+
 The backend will be available at:
 
 ```text

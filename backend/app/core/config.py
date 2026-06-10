@@ -17,6 +17,13 @@ class Settings(BaseSettings):
         default="postgresql+psycopg://delphi:delphi@localhost:5432/delphi",
         validation_alias=AliasChoices("DELPHI_DATABASE_URL", "DATABASE_URL"),
     )
+    debug_sql_enabled: bool = Field(
+        default=True,
+        validation_alias=AliasChoices(
+            "DELPHI_DEBUG_SQL_ENABLED",
+            "DEBUG_SQL_ENABLED",
+        ),
+    )
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
