@@ -4,7 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.domain.models import Dataset
+from app.db.models import DatasetModel
 from app.schemas.datasets import DatasetCreate
 
 
@@ -12,8 +12,8 @@ class DatasetAlreadyExistsError(Exception):
     pass
 
 
-def create_dataset(db: Session, dataset_create: DatasetCreate) -> Dataset:
-    dataset = Dataset(**dataset_create.model_dump())
+def create_dataset(db: Session, dataset_create: DatasetCreate) -> DatasetModel:
+    dataset = DatasetModel(**dataset_create.model_dump())
     db.add(dataset)
 
     try:
@@ -26,10 +26,12 @@ def create_dataset(db: Session, dataset_create: DatasetCreate) -> Dataset:
     return dataset
 
 
-def list_datasets(db: Session) -> list[Dataset]:
-    result = db.execute(select(Dataset).order_by(Dataset.created_at, Dataset.id))
+def list_datasets(db: Session) -> list[DatasetModel]:
+    result = db.execute(
+        select(DatasetModel).order_by(DatasetModel.created_at, DatasetModel.id)
+    )
     return list(result.scalars())
 
 
-def get_dataset(db: Session, dataset_id: UUID) -> Dataset | None:
-    return db.get(Dataset, dataset_id)
+def get_dataset(db: Session, dataset_id: UUID) -> DatasetModel | None:
+    return db.get(DatasetModel, dataset_id)

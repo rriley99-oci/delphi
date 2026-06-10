@@ -24,6 +24,7 @@ When working in this repo:
 - Default feature work should branch from and open PRs against `development`.
 - `main` is a lead-managed integration branch and should not be the ordinary target for Codex-created PRs.
 - If branch targeting is ambiguous, prefer `development` and surface that assumption clearly.
+- When the user refers to "the project" in GitHub workflow context, treat that as the organization project `oci-ai-incubations/17` unless they explicitly mean the repository instead.
 
 ## Playbook Maintenance
 

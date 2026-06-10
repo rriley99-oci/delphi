@@ -8,11 +8,21 @@ services:
              uvicorn app.main:app --host 0.0.0.0 --port 8000"
     environment:
       DELPHI_DATABASE_URL: postgresql+psycopg://delphi:delphi@postgres:5432/delphi
+      DELPHI_DEMO_SOURCE_DATABASE_URL: postgresql://delphi:delphi@demo-source-postgres:5432/delphi_source
     depends_on:
       postgres:
         condition: service_healthy
     ports:
       - "8000:8000"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=2)\"",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 6
 
   postgres:
     image: postgres:16-alpine
@@ -30,5 +40,22 @@ services:
     volumes:
       - delphi-postgres-data:/var/lib/postgresql/data
 
+  demo-source-postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: delphi_source
+      POSTGRES_USER: delphi
+      POSTGRES_PASSWORD: delphi
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U delphi -d delphi_source"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "5433:5432"
+    volumes:
+      - delphi-demo-source-data:/var/lib/postgresql/data
+
 volumes:
   delphi-postgres-data:
+  delphi-demo-source-data:

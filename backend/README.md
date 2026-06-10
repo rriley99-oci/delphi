@@ -56,24 +56,56 @@ alembic upgrade head
 alembic revision --autogenerate -m "add dataset registry"
 ```
 
-The initial migration intentionally creates no product tables. It verifies migration wiring while keeping dataset, contract, evaluation, and violation schemas for their own vertical slices.
+The migration chain now covers the current POC persistence slices for datasets,
+contracts, evaluations, and violations.
 
-## Docker Local Development
+## Container Local Development
 
-The repository root includes a Docker Compose workflow for running the backend with a local PostgreSQL metadata database.
+The repository root includes a Compose workflow for running the backend with a
+local PostgreSQL metadata database and a separate demo source PostgreSQL
+database.
+
+On macOS with Podman, start the VM first:
+
+```bash
+podman machine start
+```
+
+If Podman reports that the system helper service is not installed, either
+export the `DOCKER_HOST` value printed by `podman machine start` in the same
+terminal session or use `podman-compose`, which talks to Podman directly.
 
 Start the stack from the repository root:
+
+```bash
+podman-compose up --build
+```
+
+Docker Compose also works when Docker is your active runtime:
 
 ```bash
 docker compose up --build
 ```
 
-If your local Docker installation uses the legacy Compose command, run `docker-compose up --build` instead.
+Common commands are available through the root `Makefile`:
+
+```bash
+make up
+make logs
+make down
+make reset-db
+```
 
 The backend is available at:
 
 ```text
 http://localhost:8000/api/health
+```
+
+Check it from another terminal:
+
+```bash
+curl --fail http://localhost:8000/api/health
 ```
 
 Compose sets the backend database URL to:
@@ -82,20 +114,26 @@ Compose sets the backend database URL to:
 postgresql+psycopg://delphi:delphi@postgres:5432/delphi
 ```
 
+The demo source database is available from the host at:
+
+```text
+postgresql://delphi:delphi@localhost:5433/delphi_source
+```
+
 The backend container runs `alembic upgrade head` before starting Uvicorn, so local schema changes are applied when the stack starts.
 
 Stop the stack:
 
 ```bash
-docker compose down
+podman-compose down
 ```
 
-Legacy Compose equivalent: `docker-compose down`.
+Docker Compose equivalent: `docker compose down`.
 
-Reset the local metadata database volume:
+Reset the local metadata and demo source database volumes:
 
 ```bash
-docker compose down -v
+podman-compose down -v
 ```
 
-Legacy Compose equivalent: `docker-compose down -v`.
+Docker Compose equivalent: `docker compose down -v`.

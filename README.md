@@ -4,6 +4,29 @@ Delphi is a Kubernetes-native Data Observability & Trust platform for defining, 
 
 This repository starts with the product vision, a reference architecture, and an initial scaffold for a proof of concept (POC) focused on contract management, on-demand evaluation, violation tracking, natural language querying, and health visualization.
 
+## Local Run
+
+The current local runnable surface is the backend API plus a Postgres metadata database.
+
+Use Podman Compose from the repository root:
+
+```bash
+podman machine start
+podman-compose up --build
+```
+
+The backend will be available at:
+
+```text
+http://localhost:8000/api/health
+```
+
+Stop the stack with:
+
+```bash
+podman-compose down
+```
+
 ## Repository Layout
 
 - `docs/product-spec.md`: product requirements and UX intent
@@ -11,6 +34,62 @@ This repository starts with the product vision, a reference architecture, and an
 - `backend/`: FastAPI scaffold for Delphi APIs and evaluation engine
 - `frontend/`: placeholder for the operational UI
 - `infra/`: Kubernetes-oriented deployment assets
+- `demo_data/`: deterministic source Postgres data for local contract demos
+
+## Local Test Readiness
+
+The supported local stack uses Compose from the repository root. It starts:
+
+- `backend`: FastAPI on `http://localhost:8000`
+- `postgres`: Delphi metadata PostgreSQL on host port `5432`
+- `demo-source-postgres`: separate source PostgreSQL on host port `5433`
+
+With Podman on macOS:
+
+```bash
+podman machine start
+podman-compose up --build
+```
+
+With Docker:
+
+```bash
+docker compose up --build
+```
+
+Confirm the backend is healthy from another terminal:
+
+```bash
+curl --fail http://localhost:8000/api/health
+```
+
+Common local commands are also wrapped in the root `Makefile`:
+
+```bash
+make up
+make health
+make logs
+make down
+make reset-db
+make backend-check
+```
+
+To load deterministic demo source data into the Compose-managed source
+database:
+
+```bash
+make demo-seed
+make demo-incremental
+```
+
+The backend test and quality path is:
+
+```bash
+cd backend
+uv run black --check .
+uv run ruff check .
+uv run pytest tests
+```
 
 ## Product Vision
 
