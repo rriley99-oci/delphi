@@ -76,6 +76,20 @@ Reason:
 
 ## 2026-06-10
 
+### Runner verification gate
+
+- updated `delphi-issue-runner-automation` to require relevant local checks for
+  execution work
+- added an explicit PR CI verification gate before the runner comments on the
+  issue and moves it to `codex:in-review`
+- added a stable `ci-unverified` blocking marker for cases where CI cannot be
+  observed
+
+Reason:
+
+- keep automated issue execution from declaring review readiness until both
+  local verification and GitHub CI status are known
+
 ### Project terminology hardening
 
 - updated `AGENTS.md` and the GitHub workflow skill so "the project" defaults to GitHub org project `oci-ai-incubations/17`, not the Delphi repository

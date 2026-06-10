@@ -59,18 +59,42 @@ alembic revision --autogenerate -m "add dataset registry"
 The migration chain now covers the current POC persistence slices for datasets,
 contracts, evaluations, and violations.
 
-## Podman Local Development
+## Container Local Development
 
-The repository root includes a Compose workflow for running the backend with a local PostgreSQL metadata database under Podman.
+The repository root includes a Compose workflow for running the backend with a
+local PostgreSQL metadata database and a separate demo source PostgreSQL
+database.
+
+On macOS with Podman, start the VM first:
+
+```bash
+podman machine start
+```
+
+If Podman reports that the system helper service is not installed, either
+export the `DOCKER_HOST` value printed by `podman machine start` in the same
+terminal session or use `podman-compose`, which talks to Podman directly.
 
 Start the stack from the repository root:
 
 ```bash
-podman machine start
 podman-compose up --build
 ```
 
-If the Podman machine is already running, the `podman machine start` command is safe to re-run.
+Docker Compose also works when Docker is your active runtime:
+
+```bash
+docker compose up --build
+```
+
+Common commands are available through the root `Makefile`:
+
+```bash
+make up
+make logs
+make down
+make reset-db
+```
 
 The backend is available at:
 
@@ -78,10 +102,22 @@ The backend is available at:
 http://localhost:8000/api/health
 ```
 
+Check it from another terminal:
+
+```bash
+curl --fail http://localhost:8000/api/health
+```
+
 Compose sets the backend database URL to:
 
 ```text
 postgresql+psycopg://delphi:delphi@postgres:5432/delphi
+```
+
+The demo source database is available from the host at:
+
+```text
+postgresql://delphi:delphi@localhost:5433/delphi_source
 ```
 
 The backend container runs `alembic upgrade head` before starting Uvicorn, so local schema changes are applied when the stack starts.
@@ -92,8 +128,12 @@ Stop the stack:
 podman-compose down
 ```
 
-Reset the local metadata database volume:
+Docker Compose equivalent: `docker compose down`.
+
+Reset the local metadata and demo source database volumes:
 
 ```bash
 podman-compose down -v
 ```
+
+Docker Compose equivalent: `docker compose down -v`.

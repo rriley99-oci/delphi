@@ -125,12 +125,36 @@ When the issue is in `codex:running`:
 1. align the checkout to `origin/development`
 2. create or switch to the issue branch from `development`
 3. implement the approved work
-4. run the most relevant checks honestly
+4. run the most relevant local checks for the changed surface
 5. commit the changes
 6. push the branch
 7. open a pull request against `development` with `Closes #<number>`
-8. comment on the issue with the PR URL and the plan id
-9. move the issue label state to `codex:in-review`
+8. verify the pull request's GitHub CI checks pass
+9. comment on the issue with the PR URL, plan id, local checks, and CI result
+10. move the issue label state to `codex:in-review`
+
+Local checks are mandatory for execution work:
+
+- choose checks that match the files changed, such as backend pytest/lint/format
+  checks for backend changes, Alembic checks for migration changes, UI checks for
+  frontend changes, and focused smoke checks for local runtime/docs changes
+- run the checks before committing whenever feasible so fixes are included in
+  the same source state
+- if a relevant local check cannot be run, record the exact command and reason
+  in the PR and issue comment
+- do not claim success for checks that were skipped, blocked, or only partially
+  executed
+
+PR CI is mandatory before moving to review:
+
+- after creating or updating the PR, use `gh pr checks` or `gh pr view` with
+  `statusCheckRollup` to inspect the check state
+- wait or poll for pending checks when practical
+- if CI fails, leave the issue in `codex:running`, fix the failure, push again,
+  and re-check CI
+- if CI cannot be observed because of a GitHub outage or permissions problem,
+  post one blocking comment only if the exact marker is not already present and
+  do not move the issue to `codex:in-review`
 
 If an actionable error prevents execution:
 
@@ -147,6 +171,7 @@ Use hidden markers for machine-detectable blocking comments, for example:
 <!-- codex-error: approved-without-plan -->
 <!-- codex-error: planned-without-plan-comment -->
 <!-- codex-error: running-state-conflict -->
+<!-- codex-error: ci-unverified -->
 ```
 
 Before posting an error comment:

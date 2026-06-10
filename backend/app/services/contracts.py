@@ -3,7 +3,12 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
-from app.db.models import ContractModel, ContractRuleModel, ContractVersionModel, DatasetModel
+from app.db.models import (
+    ContractModel,
+    ContractRuleModel,
+    ContractVersionModel,
+    DatasetModel,
+)
 from app.schemas.contracts import ContractCreate
 
 
