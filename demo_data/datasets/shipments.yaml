@@ -1,0 +1,19 @@
+identity:
+  database: delphi_source
+  schema: fulfillment
+  table: shipments
+load_strategy: incremental
+description: Incremental operational shipment facts for fulfilled orders.
+time_semantics:
+  freshness_column: shipped_at
+  append_column: shipped_at
+generator_hints:
+  primary_key: shipment_id
+  child_of: sales.orders
+  generated_for_statuses:
+    - shipped
+    - delivered
+  supports_rules:
+    - freshness
+    - row_count_minimum
+    - custom_sql_late_delivery_check

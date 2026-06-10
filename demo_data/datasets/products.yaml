@@ -1,0 +1,18 @@
+identity:
+  database: delphi_source
+  schema: catalog
+  table: products
+load_strategy: snapshot
+description: Kill-and-fill catalog snapshot with stable product identities.
+time_semantics:
+  freshness_column: snapshot_as_of
+  append_column: null
+generator_hints:
+  primary_key: product_id
+  natural_key: sku
+  snapshot_rows: 32
+  reload_behavior: truncate_then_insert
+  supports_rules:
+    - freshness
+    - row_count_range
+    - custom_sql_active_product_check

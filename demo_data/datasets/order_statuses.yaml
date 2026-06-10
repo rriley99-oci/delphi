@@ -1,0 +1,15 @@
+identity:
+  database: delphi_source
+  schema: sales
+  table: order_statuses
+load_strategy: static
+description: Stable lookup table for order lifecycle states.
+time_semantics:
+  freshness_column: null
+  append_column: null
+generator_hints:
+  primary_key: status_code
+  row_count: 5
+  supports_rules:
+    - row_count_minimum
+    - custom_sql_referential_check
