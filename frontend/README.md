@@ -11,6 +11,24 @@ npm run dev
 
 The development server defaults to `http://localhost:5173`.
 
+## Backend Configuration
+
+The frontend reads backend and environment settings from `src/config.ts`.
+
+```bash
+VITE_DELPHI_API_BASE_URL=http://localhost:8000/api npm run dev
+VITE_DELPHI_ENVIRONMENT=local npm run dev
+```
+
+If `VITE_DELPHI_API_BASE_URL` is not set, the app uses `/api`.
+
+## Routes
+
+- `#overview`
+- `#datasets`
+- `#datasets/orders`
+- `#violations`
+
 ## Checks
 
 ```bash

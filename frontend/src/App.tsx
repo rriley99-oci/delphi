@@ -1,10 +1,12 @@
+import { useSyncExternalStore } from "react";
 import {
   AlertCircle,
   CheckCircle2,
   Database,
   Gauge,
   LayoutDashboard,
-  ShieldAlert
+  ShieldAlert,
+  Waypoints
 } from "lucide-react";
 import {
   Badge,
@@ -18,6 +20,7 @@ import {
   type Column
 } from "./components/primitives";
 import { AppShell, type NavItem } from "./components/AppShell";
+import { appConfig } from "./config";
 import { statusTones } from "./theme/status";
 
 type DatasetRow = {
@@ -43,6 +46,43 @@ const navItems: NavItem[] = [
   { label: "Datasets", href: "#datasets", icon: Database },
   { label: "Violations", href: "#violations", icon: ShieldAlert }
 ];
+
+type RouteId = "overview" | "datasets" | "dataset-detail" | "violations";
+
+type Route = {
+  id: RouteId;
+  activeHref: string;
+};
+
+function resolveRoute(hash: string): Route {
+  if (hash.startsWith("#datasets/")) {
+    return { id: "dataset-detail", activeHref: "#datasets" };
+  }
+
+  if (hash === "#datasets") {
+    return { id: "datasets", activeHref: "#datasets" };
+  }
+
+  if (hash === "#violations") {
+    return { id: "violations", activeHref: "#violations" };
+  }
+
+  return { id: "overview", activeHref: "#overview" };
+}
+
+function getCurrentHash() {
+  return window.location.hash || "#overview";
+}
+
+function subscribeToHashChange(onStoreChange: () => void) {
+  window.addEventListener("hashchange", onStoreChange);
+  return () => window.removeEventListener("hashchange", onStoreChange);
+}
+
+function useCurrentRoute() {
+  const hash = useSyncExternalStore(subscribeToHashChange, getCurrentHash, () => "#overview");
+  return resolveRoute(hash);
+}
 
 const datasets: DatasetRow[] = [
   {
@@ -150,17 +190,43 @@ function severityTone(severity: ViolationRow["severity"]): BadgeTone {
 }
 
 export function App() {
+  const route = useCurrentRoute();
+
   return (
     <AppShell
       navItems={navItems}
-      activeHref="#overview"
-      environment="local"
+      activeHref={route.activeHref}
+      environment={appConfig.environment}
       health={{
         label: "Backend healthy",
         tone: statusTones.healthy,
         icon: CheckCircle2
       }}
     >
+      <RouteContent routeId={route.id} />
+    </AppShell>
+  );
+}
+
+function RouteContent({ routeId }: { routeId: RouteId }) {
+  if (routeId === "datasets") {
+    return <DatasetsRoute />;
+  }
+
+  if (routeId === "dataset-detail") {
+    return <DatasetDetailRoute />;
+  }
+
+  if (routeId === "violations") {
+    return <ViolationsRoute />;
+  }
+
+  return <OverviewRoute />;
+}
+
+function OverviewRoute() {
+  return (
+    <>
       <PageHeader
         eyebrow="Operational overview"
         title="Dataset health"
@@ -175,23 +241,52 @@ export function App() {
         <Card title="Evaluation posture" value="Live" tone="info" icon={Gauge} />
       </section>
 
-      <section className="content-band" id="datasets">
+      <section className="content-band">
         <PageHeader
           title="Datasets"
           description="Scan identity, ownership, and current health before opening a detail view."
         />
         <DataTable columns={datasetColumns} rows={datasets} getRowKey={(row) => row.id} />
       </section>
+    </>
+  );
+}
 
-      <section className="content-band" id="violations">
-        <PageHeader
-          title="Violations"
-          description="Triage active and recently resolved quality issues."
-        />
-        <DataTable columns={violationColumns} rows={violations} getRowKey={(row) => row.id} />
+function DatasetsRoute() {
+  return (
+    <>
+      <PageHeader
+        eyebrow="Dataset registry"
+        title="Datasets"
+        description="Registered source tables using database.schema.table identity."
+        actions={<Badge tone="info">{appConfig.backendBaseUrl}</Badge>}
+      />
+
+      <DataTable columns={datasetColumns} rows={datasets} getRowKey={(row) => row.id} />
+    </>
+  );
+}
+
+function DatasetDetailRoute() {
+  const dataset = datasets[0];
+
+  return (
+    <>
+      <PageHeader
+        eyebrow="Dataset detail"
+        title={dataset.identity}
+        description="Primary drill-down route for metadata, current contract, evaluation posture, and related violations."
+        actions={<Badge tone={statusTones[dataset.health]}>{dataset.health}</Badge>}
+      />
+
+      <section className="metric-grid" aria-label="Dataset detail summary">
+        <Card title="Owner" value={dataset.owner} icon={Database} />
+        <Card title="Open violations" value={String(dataset.violations)} tone="danger" icon={ShieldAlert} />
+        <Card title="Last updated" value={dataset.updated} tone="info" icon={Waypoints} />
+        <Card title="Backend URL" value={appConfig.backendBaseUrl} tone="neutral" />
       </section>
 
-      <section className="state-grid" aria-label="Shared state primitives">
+      <section className="state-grid" aria-label="Dataset detail states">
         <EmptyState
           title="No contract yet"
           description="Register a contract to evaluate this dataset against freshness, row count, and SQL rules."
@@ -199,6 +294,19 @@ export function App() {
         <LoadingState label="Loading evaluation history" />
         <ErrorState title="Backend unavailable" description="Health checks will retry when the API responds." />
       </section>
-    </AppShell>
+    </>
+  );
+}
+
+function ViolationsRoute() {
+  return (
+    <>
+      <PageHeader
+        eyebrow="Violation workbench"
+        title="Violations"
+        description="Triage active and recently resolved quality issues."
+      />
+      <DataTable columns={violationColumns} rows={violations} getRowKey={(row) => row.id} />
+    </>
   );
 }
