@@ -65,6 +65,10 @@ The repository root includes a Compose workflow for running the backend with a
 local PostgreSQL metadata database and a separate demo source PostgreSQL
 database.
 
+The local PostgreSQL services use Quay-hosted images so the stack can still run
+when Docker Hub pulls are blocked or fail TLS validation in corporate network
+environments.
+
 On macOS with Podman, start the VM first:
 
 ```bash

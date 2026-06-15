@@ -25,11 +25,11 @@ services:
       retries: 6
 
   postgres:
-    image: postgres:16-alpine
+    image: quay.io/sclorg/postgresql-16-c9s
     environment:
-      POSTGRES_DB: delphi
-      POSTGRES_USER: delphi
-      POSTGRES_PASSWORD: delphi
+      POSTGRESQL_DATABASE: delphi
+      POSTGRESQL_USER: delphi
+      POSTGRESQL_PASSWORD: delphi
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U delphi -d delphi"]
       interval: 5s
@@ -41,11 +41,11 @@ services:
       - delphi-postgres-data:/var/lib/postgresql/data
 
   demo-source-postgres:
-    image: postgres:16-alpine
+    image: quay.io/sclorg/postgresql-16-c9s
     environment:
-      POSTGRES_DB: delphi_source
-      POSTGRES_USER: delphi
-      POSTGRES_PASSWORD: delphi
+      POSTGRESQL_DATABASE: delphi_source
+      POSTGRESQL_USER: delphi
+      POSTGRESQL_PASSWORD: delphi
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U delphi -d delphi_source"]
       interval: 5s
