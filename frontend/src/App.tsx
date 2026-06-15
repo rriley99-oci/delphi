@@ -271,7 +271,7 @@ function useOverviewData() {
 
   useEffect(() => {
     void loadOverview();
-  }, [loadOverview]);
+  }, []);
 
   return { state, reload: () => void loadOverview() };
 }
@@ -339,7 +339,7 @@ function useDatasetDetail(datasetId: string | null) {
 
   useEffect(() => {
     void loadDetail();
-  }, [datasetId, latestTriggeredEvaluation, loadDetail]);
+  }, [datasetId, latestTriggeredEvaluation]);
 
   return {
     state,
