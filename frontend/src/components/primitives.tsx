@@ -65,14 +65,27 @@ export type DataTableProps<Row> = {
   rows: Row[];
   getRowKey: (row: Row) => string;
   emptyMessage?: string;
+  emptyDescription?: string;
+  getRowHref?: (row: Row) => string;
+  onRowClick?: (row: Row) => void;
+  selectedRowKey?: string | null;
 };
 
-export function DataTable<Row>({ columns, rows, getRowKey, emptyMessage }: DataTableProps<Row>) {
+export function DataTable<Row>({
+  columns,
+  rows,
+  getRowKey,
+  emptyMessage,
+  emptyDescription,
+  getRowHref,
+  onRowClick,
+  selectedRowKey
+}: DataTableProps<Row>) {
   if (rows.length === 0) {
     return (
       <EmptyState
         title={emptyMessage ?? "No rows found"}
-        description="Adjust filters or add source data to populate this table."
+        description={emptyDescription ?? "Adjust filters or add source data to populate this table."}
       />
     );
   }
@@ -90,15 +103,32 @@ export function DataTable<Row>({ columns, rows, getRowKey, emptyMessage }: DataT
           </tr>
         </thead>
         <tbody>
-          {rows.map((row) => (
-            <tr key={getRowKey(row)}>
+          {rows.map((row) => {
+            const rowKey = getRowKey(row);
+            const rowHref = getRowHref?.(row);
+            const isInteractive = Boolean(onRowClick || rowHref);
+            const isSelected = rowKey === selectedRowKey;
+
+            return (
+              <tr
+                className={isInteractive ? "table-row-interactive" : undefined}
+                key={rowKey}
+                onClick={() => {
+                  if (rowHref) {
+                    window.location.hash = rowHref;
+                  }
+                  onRowClick?.(row);
+                }}
+                aria-selected={isSelected || undefined}
+              >
               {columns.map((column) => (
                 <td className={column.align === "right" ? "align-right" : undefined} key={column.key}>
                   {column.render(row)}
                 </td>
               ))}
-            </tr>
-          ))}
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
@@ -136,5 +166,27 @@ export function LoadingState({ label }: { label: string }) {
       <Loader2 className="spin" size={20} aria-hidden="true" />
       <strong>{label}</strong>
     </div>
+  );
+}
+
+export type ButtonProps = {
+  children: React.ReactNode;
+  onClick?: () => void;
+  disabled?: boolean;
+  tone?: "primary" | "secondary";
+  type?: "button" | "submit";
+};
+
+export function Button({
+  children,
+  onClick,
+  disabled = false,
+  tone = "primary",
+  type = "button"
+}: ButtonProps) {
+  return (
+    <button className={`button button-${tone}`} disabled={disabled} onClick={onClick} type={type}>
+      {children}
+    </button>
   );
 }
