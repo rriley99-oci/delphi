@@ -81,7 +81,14 @@ def test_debug_sql_insert_can_mutate_database(client):
             insert into datasets
                 (id, database_name, schema_name, table_name, created_at, updated_at)
             values
-                ('00000000-0000-0000-0000-000000000001', 'warehouse', 'finance', 'invoices', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                (
+                    '00000000-0000-0000-0000-000000000001',
+                    'warehouse',
+                    'finance',
+                    'invoices',
+                    CURRENT_TIMESTAMP,
+                    CURRENT_TIMESTAMP
+                )
             """
         },
     )
@@ -99,7 +106,10 @@ def test_debug_sql_insert_can_mutate_database(client):
 
 
 def test_debug_sql_returns_bad_request_for_invalid_sql(client):
-    response = client.post("/api/debug/sql", json={"query": "select * from missing_table"})
+    response = client.post(
+        "/api/debug/sql",
+        json={"query": "select * from missing_table"},
+    )
 
     assert response.status_code == 400
 
